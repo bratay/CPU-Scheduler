@@ -211,4 +211,17 @@ int priqueue_size(priqueue_t *q)
  */
 void priqueue_destroy(priqueue_t *q)
 {
+  node *temp = q->head;
+  node* prev_temp;
+  while (temp != NULL)
+  {
+    prev_temp = temp;
+    temp = temp->next;
+    free(prev_temp);
+  }
+
+  q->head = NULL;
+  q->tail = NULL;
+  q->index = NULL;
+  q->size = 0;
 }
