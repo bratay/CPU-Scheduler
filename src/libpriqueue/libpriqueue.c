@@ -6,7 +6,6 @@
 
 #include "libpriqueue.h"
 
-
 /**
   Initializes the priqueue_t data structure.
   
@@ -17,11 +16,14 @@
   @param comparer a function pointer that compares two elements.
   See also @ref comparer-page
  */
-void priqueue_init(priqueue_t *q, int(*comparer)(const void *, const void *))
+void priqueue_init(priqueue_t *q, int (*comparer)(const void *, const void *))
 {
-
+  q->head = NULL;
+  q->tail = q->head;
+  q->index = q->head;
+  q->comparer = comparer;
+  q->size = 0;
 }
-
 
 /**
   Insert the specified element into this priority queue.
@@ -32,9 +34,46 @@ void priqueue_init(priqueue_t *q, int(*comparer)(const void *, const void *))
  */
 int priqueue_offer(priqueue_t *q, void *ptr)
 {
-	return -1;
-}
+  int index = 0;
+  node *new_elem = (node *)malloc(1 * sizeof(node));
+  new_elem->element = ptr;
+  new_elem->next = NULL;
+  node *cursor = q->head, *prev_cursor = NULL;
 
+  while (cursor != NULL)
+  {
+    if (q->comparer(cursor->element, new_elem->element) <= 0)
+    {
+      index++;
+      if (cursor->next == NULL)
+      {
+        cursor->next = new_elem;
+        break;
+      }
+      else
+      {
+        prev_cursor = cursor;
+        cursor = cursor->next;
+      }
+    }
+    else
+    {
+      new_elem->next = cursor;
+      if (prev_cursor != NULL)
+      {
+        prev_cursor->next = new_elem;
+      }
+      break;
+    }
+  }
+
+  if (index == 0)
+  {
+    q->head = new_elem;
+  }
+  q->size++;
+  return index;
+}
 
 /**
   Retrieves, but does not remove, the head of this queue, returning NULL if
@@ -46,9 +85,15 @@ int priqueue_offer(priqueue_t *q, void *ptr)
  */
 void *priqueue_peek(priqueue_t *q)
 {
-	return NULL;
+  if (q->head != NULL)
+  {
+    return q->head->element;
+  }
+  else
+  {
+    return NULL;
+  }
 }
-
 
 /**
   Retrieves and removes the head of this queue, or NULL if this queue
@@ -60,9 +105,20 @@ void *priqueue_peek(priqueue_t *q)
  */
 void *priqueue_poll(priqueue_t *q)
 {
-	return NULL;
+  if (q->head == NULL)
+  {
+    return NULL;
+  }
+  else
+  {
+    node *temp = q->head->next;
+    void *elem = q->head->element;
+    free(q->head);
+    q->head = temp;
+    q->size--;
+    return elem;
+  }
 }
-
 
 /**
   Returns the element at the specified position in this list, or NULL if
@@ -75,9 +131,20 @@ void *priqueue_poll(priqueue_t *q)
  */
 void *priqueue_at(priqueue_t *q, int index)
 {
-	return NULL;
+  if (index >= q->size)
+  {
+    return NULL;
+  }
+  else
+  {
+    node *temp = q->head;
+    for (int i = 0; i < index; i++)
+    {
+      temp = temp->next;
+    }
+    return temp->element;
+  }
 }
-
 
 /**
   Removes all instances of ptr from the queue. 
@@ -90,6 +157,7 @@ void *priqueue_at(priqueue_t *q, int index)
  */
 int priqueue_remove(priqueue_t *q, void *ptr)
 {
+<<<<<<< HEAD
   if (q->head == NULL) {
     return 0;
   } 
@@ -114,7 +182,6 @@ int priqueue_remove(priqueue_t *q, void *ptr)
   }
 }
 
-
 /**
   Removes the specified index from the queue, moving later elements up
   a spot in the queue to fill the gap.
@@ -126,9 +193,27 @@ int priqueue_remove(priqueue_t *q, void *ptr)
  */
 void *priqueue_remove_at(priqueue_t *q, int index)
 {
-	return 0;
-}
+  if (index >= q->size)
+  {
+    return NULL;
+  }
+  else
+  {
+    node *temp = q->head;
+    void *element;
+    for (int i = 0; i < index - 1; i++)
+    {
+      temp = temp->next;
+    }
 
+    temp->next = temp->next->next;
+    element = temp->next->element;
+    free(temp->next);
+    q->size--;
+
+    return element;
+  }
+}
 
 /**
   Return the number of elements in the queue.
@@ -138,9 +223,8 @@ void *priqueue_remove_at(priqueue_t *q, int index)
  */
 int priqueue_size(priqueue_t *q)
 {
-	return 0;
+  return q->size;
 }
-
 
 /**
   Destroys and frees all the memory associated with q.
@@ -149,5 +233,17 @@ int priqueue_size(priqueue_t *q)
  */
 void priqueue_destroy(priqueue_t *q)
 {
+  node *temp = q->head;
+  node* prev_temp;
+  while (temp != NULL)
+  {
+    prev_temp = temp;
+    temp = temp->next;
+    free(prev_temp);
+  }
 
+  q->head = NULL;
+  q->tail = NULL;
+  q->index = NULL;
+  q->size = 0;
 }
