@@ -32,6 +32,12 @@ void priqueue_init(priqueue_t *q, int(*comparer)(const void *, const void *))
  */
 int priqueue_offer(priqueue_t *q, void *ptr)
 {
+  if (ptr) {
+    priqueue_t *temp;
+    temp->next = ptr;
+    q = temp;
+    return 0;
+  }
 	return -1;
 }
 
@@ -46,6 +52,9 @@ int priqueue_offer(priqueue_t *q, void *ptr)
  */
 void *priqueue_peek(priqueue_t *q)
 {
+  if (q) {
+    return q;
+  }
 	return NULL;
 }
 
@@ -74,7 +83,8 @@ void *priqueue_poll(priqueue_t *q)
   @return NULL if the queue does not contain the index'th element
  */
 void *priqueue_at(priqueue_t *q, int index)
-{
+{ 
+  if (index)
 	return NULL;
 }
 
@@ -90,7 +100,28 @@ void *priqueue_at(priqueue_t *q, int index)
  */
 int priqueue_remove(priqueue_t *q, void *ptr)
 {
-	return 0;
+  if (q->head == NULL) {
+    return 0;
+  } 
+  else 
+  {
+    int sum = 0;
+    node* temp = q->head;
+    node* jump = temp;
+
+    while (jump != NULL) 
+    {
+      Node* temp2 = temp->next;
+      if (temp == ptr) 
+      { 
+        sum++;
+        free(temp);
+      }
+      jump = temp2;
+      jump = jump->next;
+    }
+    return sum;
+  }
 }
 
 
