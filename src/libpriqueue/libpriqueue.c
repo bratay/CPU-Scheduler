@@ -157,7 +157,29 @@ void *priqueue_at(priqueue_t *q, int index)
  */
 int priqueue_remove(priqueue_t *q, void *ptr)
 {
-  return 0;
+<<<<<<< HEAD
+  if (q->head == NULL) {
+    return 0;
+  } 
+  else 
+  {
+    int sum = 0;
+    node* temp = q->head;
+    node* jump = temp;
+
+    while (jump != NULL) 
+    {
+      Node* temp2 = temp->next;
+      if (temp == ptr) 
+      { 
+        sum++;
+        free(temp);
+      }
+      jump = temp2;
+      jump = jump->next;
+    }
+    return sum;
+  }
 }
 
 /**
