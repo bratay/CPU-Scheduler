@@ -337,5 +337,5 @@ void scheduler_show_queue()
 {
   printf("\n           Job |       Priority |        Arrival |       Run-Time | Time-Remaining\n");
   printf("-----------------|----------------|----------------|----------------|---------------\n");
-  priqueue_mut_map(&scheduler.jobs, (map_apply_t)debug_print);
+  pirorityHelper(&scheduler.jobs, (helperHelp)printf);
 }

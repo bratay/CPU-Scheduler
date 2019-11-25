@@ -244,6 +244,7 @@ void priqueue_destroy(priqueue_t *q)
 {
   node *temp = q->head;
   node* prev_temp;
+
   while (temp != NULL)
   {
     prev_temp = temp;
@@ -251,8 +252,17 @@ void priqueue_destroy(priqueue_t *q)
     free(prev_temp);
   }
 
+  q->size = 0;
+  q->index = NULL;
   q->head = NULL;
   q->tail = NULL;
-  q->index = NULL;
-  q->size = 0;
+}
+
+void pirorityHelper(priqueue_t *que, helperHelp help){
+    node *cursor = que->head;
+
+    while(cursor != NULL){
+      help(cursor->element);
+      cursor = cursor->next;
+    }
 }
