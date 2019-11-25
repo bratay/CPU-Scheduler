@@ -22,9 +22,22 @@ typedef struct _job_t
 
 
 // Comparison for schemes
-int RR_comp(__attribute__((unused)) const job_t *in_queue, __attribute__((unused)) const job_t *new_job){ return -1; }
+
+
+int PSJF_comp(const job_t *in_queue, const job_t *new_job)
+{
+  return in_queue->timeLeft - new_job->timeLeft;
+}
 
 int FCFS_comp(__attribute__((unused)) const job_t *in_queue, __attribute__((unused)) const job_t *new_job){ return -1; }
+
+int priComp(const job_t *in_queue, const job_t *new_job)
+{
+  if (in_queue->firstRun != -1)
+    return -1;
+  else
+    return in_queue->priority - new_job->priority;
+}
 
 int SJF_comp(const job_t *in_queue, const job_t *new_job)
 {
@@ -34,18 +47,7 @@ int SJF_comp(const job_t *in_queue, const job_t *new_job)
     return in_queue->runTime - new_job->runTime;
 }
 
-int PSJF_comp(const job_t *in_queue, const job_t *new_job)
-{
-  return in_queue->timeLeft - new_job->timeLeft;
-}
-
-int priComp(const job_t *in_queue, const job_t *new_job)
-{
-  if (in_queue->firstRun != -1)
-    return -1;
-  else
-    return in_queue->priority - new_job->priority;
-}
+int RR_comp(__attribute__((unused)) const job_t *in_queue, __attribute__((unused)) const job_t *new_job){ return -1; }
 
 int PpriComp(const job_t *in_queue, const job_t *new_job){ return in_queue->priority - new_job->priority; }
 
@@ -58,16 +60,16 @@ comp_t get_comparer(scheme_t scheme)
 {
   switch (scheme)
   {
-  case FCFS:
-    return (comp_t)FCFS_comp;
-  case SJF:
-    return (comp_t)SJF_comp;
-  case PSJF:
-    return (comp_t)PSJF_comp;
   case PRI:
     return (comp_t)priComp;
+  case PSJF:
+    return (comp_t)PSJF_comp;
+  case SJF:
+    return (comp_t)SJF_comp;
   case PPRI:
     return (comp_t)PpriComp;
+  case FCFS:
+    return (comp_t)FCFS_comp;
   case RR:
     return (comp_t)RR_comp;
   default:

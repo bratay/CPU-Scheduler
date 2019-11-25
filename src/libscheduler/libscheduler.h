@@ -17,18 +17,18 @@
 typedef enum {FCFS = 0, SJF, PSJF, PRI, PPRI, RR} scheme_t;
 
 typedef struct scheduler_t_ {
+    comp_t priComp;
+    scheme_t scheme;
     priqueue_t jobs;
     int availableCores;
-    scheme_t scheme;
-    comp_t priComp;
 
     // statistics
-    int jobsRun; 
-    int finishedJobs;
-    int arrSize;
     int *waitTime;
     int *turnAroundTimes;
     int *reponses;
+    int finishedJobs;
+    int arrSize;
+    int jobsRun; 
 } scheduler_t;
 
 void  scheduler_start_up               (int cores, scheme_t scheme);
