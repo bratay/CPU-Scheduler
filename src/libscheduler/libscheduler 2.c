@@ -22,22 +22,9 @@ typedef struct _job_t
 
 
 // Comparison for schemes
-
-
-int PSJF_comp(const job_t *in_queue, const job_t *new_job)
-{
-  return in_queue->timeLeft - new_job->timeLeft;
-}
+int RR_comp(__attribute__((unused)) const job_t *in_queue, __attribute__((unused)) const job_t *new_job){ return -1; }
 
 int FCFS_comp(__attribute__((unused)) const job_t *in_queue, __attribute__((unused)) const job_t *new_job){ return -1; }
-
-int priComp(const job_t *in_queue, const job_t *new_job)
-{
-  if (in_queue->firstRun != -1)
-    return -1;
-  else
-    return in_queue->priority - new_job->priority;
-}
 
 int SJF_comp(const job_t *in_queue, const job_t *new_job)
 {
@@ -47,7 +34,18 @@ int SJF_comp(const job_t *in_queue, const job_t *new_job)
     return in_queue->runTime - new_job->runTime;
 }
 
-int RR_comp(__attribute__((unused)) const job_t *in_queue, __attribute__((unused)) const job_t *new_job){ return -1; }
+int PSJF_comp(const job_t *in_queue, const job_t *new_job)
+{
+  return in_queue->timeLeft - new_job->timeLeft;
+}
+
+int priComp(const job_t *in_queue, const job_t *new_job)
+{
+  if (in_queue->firstRun != -1)
+    return -1;
+  else
+    return in_queue->priority - new_job->priority;
+}
 
 int PpriComp(const job_t *in_queue, const job_t *new_job){ return in_queue->priority - new_job->priority; }
 
@@ -60,16 +58,16 @@ comp_t get_comparer(scheme_t scheme)
 {
   switch (scheme)
   {
-  case PRI:
-    return (comp_t)priComp;
-  case PSJF:
-    return (comp_t)PSJF_comp;
-  case SJF:
-    return (comp_t)SJF_comp;
-  case PPRI:
-    return (comp_t)PpriComp;
   case FCFS:
     return (comp_t)FCFS_comp;
+  case SJF:
+    return (comp_t)SJF_comp;
+  case PSJF:
+    return (comp_t)PSJF_comp;
+  case PRI:
+    return (comp_t)priComp;
+  case PPRI:
+    return (comp_t)PpriComp;
   case RR:
     return (comp_t)RR_comp;
   default:
@@ -197,7 +195,7 @@ int scheduler_new_job(int job_number, int time, int running_time, int priority)
   @return job_number of the job that should be scheduled to run on core core_id
   @return -1 if core should remain idle.
  */
-int scheduler_job_finished(int core_id, int job_number, int time)
+int scheduler_job_finished(__attribute__((unused)) int core_id, __attribute__((unused)) int job_number, int time)
 {
   job_t *jobIterator = priqueue_poll(&scheduler.jobs);
   scheduler.finishedJobs++;
@@ -226,7 +224,6 @@ int scheduler_job_finished(int core_id, int job_number, int time)
   }
 }
 
-
 /**
   When the scheme is set to RR, called when the quantum timer has expired
   on a core.
@@ -240,7 +237,7 @@ int scheduler_job_finished(int core_id, int job_number, int time)
   @return job_number of the job that should be scheduled on core cord_id
   @return -1 if core should remain idle
  */
-int scheduler_quantum_expired(int core_id, int time)
+int scheduler_quantum_expired(__attribute__((unused)) int core_id, int time)
 {
   if (scheduler.jobs.size == 0)
     return -1;
@@ -273,7 +270,6 @@ float scheduler_average_waiting_time()
   return average(scheduler.waitTime);
 }
 
-
 /**
   Returns the average turnaround time of all jobs scheduled by your scheduler.
 
@@ -283,9 +279,8 @@ float scheduler_average_waiting_time()
  */
 float scheduler_average_turnaround_time()
 {
-	return average(scheduler.turnAroundTimes);
+  return average(scheduler.turnAroundTimes);
 }
-
 
 /**
   Returns the average response time of all jobs scheduled by your scheduler.
@@ -296,33 +291,35 @@ float scheduler_average_turnaround_time()
  */
 float scheduler_average_response_time()
 {
-	return average(scheduler.reponses);
+  return average(scheduler.reponses);
 }
-
 
 /**
   Free any memory associated with your scheduler.
  
-  Assumption:
+  Assumptions:
     - This function will be the last function called in your library.
 */
 void scheduler_clean_up()
 {
-  // job_t *jobIterator;
+  job_t *jobIterator;
+  while (scheduler.jobs.size > 0)
+  {
+    jobIterator = priqueue_poll(&scheduler.jobs);
+    free(jobIterator);
+  }
+  priqueue_destroy(&scheduler.jobs);
 
-  // while (scheduler.jobs.size > 0)
-  // {
-  //   jobIterator = priqueue_poll(&scheduler.jobs);
-  //   free(jobIterator);
-  // }
-
-  // priqueue_destroy(&scheduler.jobs);
-
-  // free(scheduler.waitTime);
-  // free(scheduler.turnAroundTimes);
-  // free(scheduler.reponses);
+  free(scheduler.waitTime);
+  free(scheduler.turnAroundTimes);
+  free(scheduler.reponses);
 }
 
+void debug_print(const job_t *job)
+{
+  printf("  %14d | %14d | %14d | %14d | %14d \n",
+         job->jobID, job->priority, job->arrival, job->runTime, job->timeLeft);
+}
 
 /**
   This function may print out any debugging information you choose. This
@@ -337,7 +334,7 @@ void scheduler_clean_up()
  */
 void scheduler_show_queue()
 {
-  printf("\n           Job |       Priority |        Arrival |       Run-Time | Time-Remaining\n");
+  printf("\n             Job |       Priority |        Arrival |       Run-Time | Time-Remaining\n");
   printf("-----------------|----------------|----------------|----------------|---------------\n");
   priqueue_mut_map(&scheduler.jobs, (map_apply_t)debug_print);
 }
