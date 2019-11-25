@@ -54,22 +54,22 @@ int PpriComp(const job_t *in_queue, const job_t *new_job){ return in_queue->prio
    @param scheme - scheme chosen by user
    @return a function pointer for comparing two jobs
 */
-comp_t get_comparer(scheme_t scheme)
+compare get_comparer(scheme_t scheme)
 {
   switch (scheme)
   {
   case PRI:
-    return (comp_t)priComp;
+    return (compare)priComp;
   case PSJF:
-    return (comp_t)PSJF_comp;
+    return (compare)PSJF_comp;
   case SJF:
-    return (comp_t)SJF_comp;
+    return (compare)SJF_comp;
   case PPRI:
-    return (comp_t)PpriComp;
+    return (compare)PpriComp;
   case FCFS:
-    return (comp_t)FCFS_comp;
+    return (compare)FCFS_comp;
   case RR:
-    return (comp_t)RR_comp;
+    return (compare)RR_comp;
   default:
     return NULL;
   }

@@ -17,7 +17,7 @@
 typedef enum {FCFS = 0, SJF, PSJF, PRI, PPRI, RR} scheme_t;
 
 typedef struct scheduler_t_ {
-    comp_t priComp;
+    compare priComp;
     scheme_t scheme;
     priqueue_t jobs;
     int availableCores;
