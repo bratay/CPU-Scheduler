@@ -321,6 +321,10 @@ void scheduler_clean_up()
   // free(scheduler.reponses);
 }
 
+void jobPrintHelper(const job_t *job){
+    printf("  %14d | %14d | %14d | %14d | %14d \n",
+	   job->jobID, job->priority, job->arrival, job->runTime, job->timeLeft);
+}
 
 /**
   This function may print out any debugging information you choose. This
@@ -337,5 +341,5 @@ void scheduler_show_queue()
 {
   printf("\n           Job |       Priority |        Arrival |       Run-Time | Time-Remaining\n");
   printf("-----------------|----------------|----------------|----------------|---------------\n");
-  pirorityHelper(&scheduler.jobs, (helperHelp)printf);
+  pirorityHelper(&scheduler.jobs, (helperHelp) jobPrintHelper);
 }
