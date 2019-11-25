@@ -5,6 +5,7 @@
 #define LIBPRIQUEUE_H_
 
 typedef int (*compare)(const void *, const void *);
+typedef void(*helperHelp)(void *);
 
 typedef struct node
 {

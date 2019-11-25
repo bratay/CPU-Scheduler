@@ -8,6 +8,7 @@
 #include "libscheduler.h"
 #include "../libpriqueue/libpriqueue.h"
 
+scheduler_t scheduler;
 
 /**
   Stores information making up a job to be scheduled including any statistics.
@@ -16,9 +17,63 @@
 */
 typedef struct _job_t
 {
-
+  int runTime, firstRun, priority, timeLeft, jobID, arrival;
 } job_t;
 
+
+// Comparison for schemes
+int PSJF_comp(const job_t *in_queue, const job_t *new_job)
+{
+  return in_queue->timeLeft - new_job->timeLeft;
+}
+
+int FCFS_comp(__attribute__((unused)) const job_t *in_queue, __attribute__((unused)) const job_t *new_job){ return -1; }
+
+int priComp(const job_t *in_queue, const job_t *new_job)
+{
+  if (in_queue->firstRun != -1)
+    return -1;
+  else
+    return in_queue->priority - new_job->priority;
+}
+
+int SJF_comp(const job_t *in_queue, const job_t *new_job)
+{
+  if (in_queue->firstRun != -1)
+    return -1;
+  else
+    return in_queue->runTime - new_job->runTime;
+}
+
+int RR_comp(__attribute__((unused)) const job_t *in_queue, __attribute__((unused)) const job_t *new_job){ return -1; }
+
+int PpriComp(const job_t *in_queue, const job_t *new_job){ return in_queue->priority - new_job->priority; }
+
+/**
+   Helper function to determine the comparison function to use based on a user picked scheme.
+   @param scheme - scheme chosen by user
+   @return a function pointer for comparing two jobs
+*/
+compare get_comparer(scheme_t scheme)
+{
+  switch (scheme)
+  {
+  case PRI:
+    return (compare)priComp;
+  case PSJF:
+    return (compare)PSJF_comp;
+  case SJF:
+    return (compare)SJF_comp;
+  case PPRI:
+    return (compare)PpriComp;
+  case FCFS:
+    return (compare)FCFS_comp;
+  case RR:
+    return (compare)RR_comp;
+  default:
+    return NULL;
+  }
+}
 
 /**
   Initalizes the scheduler.
@@ -34,9 +89,47 @@ typedef struct _job_t
 */
 void scheduler_start_up(int cores, scheme_t scheme)
 {
+  scheduler.jobsRun = 0;
+  scheduler.waitTime = (int *)malloc(MIN_SIZE_ARRS * sizeof(int));
+  scheduler.reponses = (int *)malloc(MIN_SIZE_ARRS * sizeof(int));
+  scheduler.turnAroundTimes = (int *)malloc(MIN_SIZE_ARRS * sizeof(int));
+  scheduler.finishedJobs = 0;
+  scheduler.arrSize = MIN_SIZE_ARRS;
 
+  scheduler.scheme = scheme;
+  scheduler.availableCores = cores;
+  scheduler.priComp = get_comparer(scheme);
+  priqueue_init(&scheduler.jobs, scheduler.priComp);
 }
 
+void checkResponses(int time)
+{
+  job_t *job = priqueue_peek(&scheduler.jobs);
+  
+  if (job == NULL)
+    return;
+  else if (job->firstRun == -1)
+  {
+    job_t *preFirstJob = priqueue_at(&scheduler.jobs, 1);
+
+    if (preFirstJob != NULL && preFirstJob->firstRun == time)
+      preFirstJob->firstRun = -1;
+    else
+      scheduler.jobsRun++;
+
+    if (scheduler.jobsRun == scheduler.arrSize)
+    {
+      scheduler.turnAroundTimes = realloc(scheduler.turnAroundTimes, scheduler.arrSize * sizeof(int));
+      scheduler.waitTime = realloc(scheduler.waitTime, scheduler.arrSize * sizeof(int));
+      scheduler.reponses = realloc(scheduler.reponses, scheduler.arrSize * sizeof(int));
+      scheduler.arrSize *= SCALE_SIZE;
+    }
+
+    job->firstRun = time;
+
+    scheduler.reponses[scheduler.jobsRun - 1] = time - job->arrival;
+  }
+}
 
 /**
   Called when a new job arrives.
@@ -47,7 +140,7 @@ void scheduler_start_up(int cores, scheme_t scheme)
   time cycle, return the zero-based index of the core the job should be
   scheduled on. If another job is already running on the core specified,
   this will preempt the currently running job.
-  Assumption:
+  Assumptions:
     - You may assume that every job wil have a unique arrival time.
 
   @param job_number a globally unique identification number of the job arriving.
@@ -60,9 +153,33 @@ void scheduler_start_up(int cores, scheme_t scheme)
  */
 int scheduler_new_job(int job_number, int time, int running_time, int priority)
 {
-	return -1;
-}
+  int currentRunning = -1;
 
+  job_t *currentJob = priqueue_peek(&scheduler.jobs);
+
+  if (currentJob != NULL)
+  {
+    currentRunning = currentJob->jobID;
+    currentJob->timeLeft = currentJob->timeLeft - (time - currentJob->firstRun);
+  }
+
+  job_t *new_job = (job_t *)malloc(1 * sizeof(job_t));
+  new_job->priority = priority;
+  new_job->jobID = job_number;
+  new_job->arrival = time;
+  new_job->firstRun = -1;
+  new_job->runTime = running_time;
+  new_job->timeLeft = running_time;
+
+  priqueue_offer(&scheduler.jobs, new_job);
+  checkResponses(time);
+
+  // tentative, update this if multiple core option is done
+  if (((job_t *)priqueue_peek(&scheduler.jobs))->jobID != currentRunning)
+    return 0;
+  else
+    return -1;
+}
 
 /**
   Called when a job has completed execution.
@@ -80,7 +197,31 @@ int scheduler_new_job(int job_number, int time, int running_time, int priority)
  */
 int scheduler_job_finished(int core_id, int job_number, int time)
 {
-	return -1;
+  job_t *jobIterator = priqueue_poll(&scheduler.jobs);
+  scheduler.finishedJobs++;
+  int waiting;
+  int turnAround;
+
+  if (jobIterator != NULL)
+  {
+    turnAround = time - jobIterator->arrival;
+    waiting = time - jobIterator->arrival - jobIterator->runTime;
+
+    scheduler.turnAroundTimes[scheduler.finishedJobs - 1] = turnAround;
+    scheduler.waitTime[scheduler.finishedJobs - 1] = waiting;
+
+    free(jobIterator);
+  }
+
+  if (scheduler.jobs.size == 0)
+    return -1;
+  else
+  {
+    checkResponses(time);
+
+    jobIterator = priqueue_peek(&scheduler.jobs);
+    return jobIterator->jobID;
+  }
 }
 
 
@@ -99,9 +240,24 @@ int scheduler_job_finished(int core_id, int job_number, int time)
  */
 int scheduler_quantum_expired(int core_id, int time)
 {
-	return -1;
+  if (scheduler.jobs.size == 0)
+    return -1;
+
+  job_t *job = priqueue_poll(&scheduler.jobs);
+  priqueue_offer(&scheduler.jobs, job);
+  checkResponses(time);
+  job = priqueue_peek(&scheduler.jobs);
+  return job->jobID;
 }
 
+float average(int *buffer)
+{
+  float avg = 0;
+  for (int i = 0; i < scheduler.jobsRun; i++)
+    avg += buffer[i];
+  
+  return avg / scheduler.jobsRun;
+}
 
 /**
   Returns the average waiting time of all jobs scheduled by your scheduler.
@@ -112,7 +268,7 @@ int scheduler_quantum_expired(int core_id, int time)
  */
 float scheduler_average_waiting_time()
 {
-	return 0.0;
+  return average(scheduler.waitTime);
 }
 
 
@@ -125,7 +281,7 @@ float scheduler_average_waiting_time()
  */
 float scheduler_average_turnaround_time()
 {
-	return 0.0;
+	return average(scheduler.turnAroundTimes);
 }
 
 
@@ -138,7 +294,7 @@ float scheduler_average_turnaround_time()
  */
 float scheduler_average_response_time()
 {
-	return 0.0;
+	return average(scheduler.reponses);
 }
 
 
@@ -150,9 +306,25 @@ float scheduler_average_response_time()
 */
 void scheduler_clean_up()
 {
+  job_t *jobIterator;
 
+  while (scheduler.jobs.size > 0)
+  {
+    jobIterator = priqueue_poll(&scheduler.jobs);
+    free(jobIterator);
+  }
+
+  priqueue_destroy(&scheduler.jobs);
+
+  free(scheduler.waitTime);
+  free(scheduler.turnAroundTimes);
+  free(scheduler.reponses);
 }
 
+void jobPrintHelper(const job_t *job){
+    printf("  %14d | %14d | %14d | %14d | %14d \n",
+	   job->jobID, job->priority, job->arrival, job->runTime, job->timeLeft);
+}
 
 /**
   This function may print out any debugging information you choose. This
@@ -167,5 +339,7 @@ void scheduler_clean_up()
  */
 void scheduler_show_queue()
 {
-
+  printf("\n           Job |       Priority |        Arrival |       Run-Time | Time-Remaining\n");
+  printf("-----------------|----------------|----------------|----------------|---------------\n");
+  pirorityHelper(&scheduler.jobs, (helperHelp) jobPrintHelper);
 }
