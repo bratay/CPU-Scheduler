@@ -306,19 +306,19 @@ float scheduler_average_response_time()
 */
 void scheduler_clean_up()
 {
-  // job_t *jobIterator;
+  job_t *jobIterator;
 
-  // while (scheduler.jobs.size > 0)
-  // {
-  //   jobIterator = priqueue_poll(&scheduler.jobs);
-  //   free(jobIterator);
-  // }
+  while (scheduler.jobs.size > 0)
+  {
+    jobIterator = priqueue_poll(&scheduler.jobs);
+    free(jobIterator);
+  }
 
-  // priqueue_destroy(&scheduler.jobs);
+  priqueue_destroy(&scheduler.jobs);
 
-  // free(scheduler.waitTime);
-  // free(scheduler.turnAroundTimes);
-  // free(scheduler.reponses);
+  free(scheduler.waitTime);
+  free(scheduler.turnAroundTimes);
+  free(scheduler.reponses);
 }
 
 void jobPrintHelper(const job_t *job){
