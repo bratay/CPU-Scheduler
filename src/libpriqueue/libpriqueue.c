@@ -38,30 +38,30 @@ int priqueue_offer(priqueue_t *q, void *ptr)
   node *new_elem = (node *)malloc(1 * sizeof(node));
   new_elem->element = ptr;
   new_elem->next = NULL;
-  node *cursor = q->head, *prev_cursor = NULL;
+  node *iterator = q->head, *pre = NULL;
 
-  while (cursor != NULL)
+  while (iterator != NULL)
   {
-    if (q->comparer(cursor->element, new_elem->element) <= 0)
+    if (q->comparer(iterator->element, new_elem->element) <= 0)
     {
       index++;
-      if (cursor->next == NULL)
+      if (iterator->next == NULL)
       {
-        cursor->next = new_elem;
+        iterator->next = new_elem;
         break;
       }
       else
       {
-        prev_cursor = cursor;
-        cursor = cursor->next;
+        pre = iterator;
+        iterator = iterator->next;
       }
     }
     else
     {
-      new_elem->next = cursor;
-      if (prev_cursor != NULL)
+      new_elem->next = iterator;
+      if (pre != NULL)
       {
-        prev_cursor->next = new_elem;
+        pre->next = new_elem;
       }
       break;
     }
@@ -157,28 +157,38 @@ void *priqueue_at(priqueue_t *q, int index)
  */
 int priqueue_remove(priqueue_t *q, void *ptr)
 {
-  if (q->head == NULL) {
-    return 0;
-  } 
-  else 
-  {
-    int sum = 0;
-    node* temp = q->head;
-    node* jump = temp;
+  node *iterator = q->head;
+  node *pre = NULL;
+  int removedCount = 0;
 
-    while (jump != NULL) 
-    {
-      Node* temp2 = temp->next;
-      if (temp == ptr) 
-      { 
-        sum++;
-        free(temp);
-      }
-      jump = temp2;
-      jump = jump->next;
-    }
-    return sum;
+  if(ptr == NULL)
+    return 0;
+
+  while(iterator != NULL){
+    if(*(int *)ptr == *(int *)(iterator->element)){
+      removedCount++;
+
+      if(pre == NULL)
+        q->head = iterator->next;
+      else 
+        pre->next = iterator->next;
+
+      free(iterator);
+
+      if(pre == NULL)
+        iterator = q->head;
+      else 
+        iterator = pre->next;
+      
+    } else {
+      pre = iterator;
+      iterator = iterator->next;
+    }	
   }
+
+  q->size = q->size - removedCount;
+
+  return removedCount;
 }
 
 /**
