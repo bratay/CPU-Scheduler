@@ -4,10 +4,32 @@
 #ifndef LIBSCHEDULER_H_
 #define LIBSCHEDULER_H_
 
+#include "../libpriqueue/libpriqueue.h"
+
+#include <stdbool.h>
+
+#define MIN_SIZE_ARRS 1000
+#define SCALE_SIZE    2
+
 /**
   Constants which represent the different scheduling algorithms
 */
 typedef enum {FCFS = 0, SJF, PSJF, PRI, PPRI, RR} scheme_t;
+
+typedef struct scheduler_t_ {
+    priqueue_t jobs;
+    int availableCores;
+    scheme_t scheme;
+    comp_t priComp;
+
+    // statistics
+    int jobsRun; 
+    int finishedJobs;
+    int arrSize;
+    int *waitTime;
+    int *turnAroundTimes;
+    int *reponses;
+} scheduler_t;
 
 void  scheduler_start_up               (int cores, scheme_t scheme);
 int   scheduler_new_job                (int job_number, int time, int running_time, int priority);
