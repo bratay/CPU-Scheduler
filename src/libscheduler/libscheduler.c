@@ -22,8 +22,6 @@ typedef struct _job_t
 
 
 // Comparison for schemes
-
-
 int PSJF_comp(const job_t *in_queue, const job_t *new_job)
 {
   return in_queue->timeLeft - new_job->timeLeft;
